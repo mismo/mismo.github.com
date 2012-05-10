@@ -1,0 +1,147 @@
+usage: git [--version] [--exec-path[=GIT_EXEC_PATH]] [--html-path]
+           [-p|--paginate|--no-pager] [--no-replace-objects]
+           [--bare] [--git-dir=GIT_DIR] [--work-tree=GIT_WORK_TREE]
+           [-c name=value] [--help]
+           COMMAND [ARGS]
+
+The most commonly used git commands are:
+   add        Add file contents to the index
+   bisect     Find by binary search the change that introduced a bug
+   branch     List, create, or delete branches
+   checkout   Checkout a branch or paths to the working tree
+   clone      Clone a repository into a new directory
+   commit     Record changes to the repository
+   diff       Show changes between commits, commit and working tree, etc
+   fetch      Download objects and refs from another repository
+   grep       Print lines matching a pattern
+   init       Create an empty git repository or reinitialize an existing one
+   log        Show commit logs
+   merge      Join two or more development histories together
+   mv         Move or rename a file, a directory, or a symlink
+   pull       Fetch from and merge with another repository or a local branch
+   push       Update remote refs along with associated objects
+   rebase     Forward-port local commits to the updated upstream head
+   reset      Reset current HEAD to the specified state
+   rm         Remove files from the working tree and from the index
+   show       Show various types of objects
+   status     Show the working tree status
+   tag        Create, list, delete or verify a tag object signed with GPG
+
+See 'git help COMMAND' for more information on a specific command.
+
+
+##=============================================================================
+## 常用命令BEGIN
+##=============================================================================
+
+##==== Test everything out. ====
+$ ssh -T git@github.com
+# Type “yes”.
+
+##==== Set Up Your Info. ====
+$ git config --global user.name "Firstname Lastname"
+$ git config --global user.email "your_email@youremail.com"
+# git config core.editor vim
+# git config core.paper "less -N"
+# git config color.diff true
+# git config alias.co checkout
+
+##==== Create a README for your repo. ====
+$ mkdir ~/Hello-World
+$ cd ~/Hello-World
+$ git init
+$ touch README
+$ git add README
+$ git commit -m "first commit"
+$ git remote add origin git@github.com:username/Hello-World.git
+$ git push -u origin master
+
+##==== Commonly used git commands. ====
+git clone [--template=<template_directory>]
+          [-l] [-s] [--no-hardlinks] [-q] [-n] [--bare] [--mirror]
+          [-o <name>] [-b <name>] [-u <upload-pack>] [--reference <repository>]
+          [--depth <depth>] [--recursive] [--] <repository> [<directory>]
+# eg: "git clone git@github.com:mismo/mismo.github.com.git e:\opensrc\zhi\mismo.github.com"
+
+git add [-n] [-v] [--force | -f] [--interactive | -i] [--patch | -p]
+          [--edit | -e] [--all | [--update | -u]] [--intent-to-add | -N]
+          [--refresh] [--ignore-errors] [--ignore-missing] [--]
+          [<filepattern>…]
+# eg: "git add -A", "git add Documentation/\*.txt", "git add git-*.sh"
+
+git commit [-a | --interactive] [-s] [-v] [-u<mode>] [--amend] [--dry-run]
+           [(-c | -C) <commit>] [-F <file> | -m <msg>] [--reset-author]
+           [--allow-empty] [--allow-empty-message] [--no-verify] [-e] [--author=<author>]
+           [--date=<date>] [--cleanup=<mode>] [--status | --no-status] [--]
+           [[-i | -o ]<file>…]
+# eg: "git commit -m 'commit msg'", "git commit -a"
+# Exit commit message editor: Esc, "Shift + Z", "Shift + Z".
+
+git remote [-v | --verbose]
+git remote add [-t <branch>] [-m <master>] [-f] [--tags|--no-tags] [--mirror] <name> <url>
+git remote rename <old> <new>
+git remote rm <name>
+git remote set-head <name> (-a | -d | <branch>)
+git remote set-branches <name> [--add] <branch>…
+git remote set-url [--push] <name> <newurl> [<oldurl>]
+git remote set-url --add [--push] <name> <newurl>
+git remote set-url --delete [--push] <name> <url>
+git remote [-v | --verbose] show [-n] <name>
+git remote prune [-n | --dry-run] <name>
+git remote [-v | --verbose] update [-p | --prune] [group | remote]…
+# eg: "git remote add origin git@github.com:username/Hello-World.git"
+
+git push [--all | --mirror | --tags] [-n | --dry-run] [--receive-pack=<git-receive-pack>]
+           [--repo=<repository>] [-f | --force] [-v | --verbose] [-u | --set-upstream]
+           [<repository> [<refspec>…]]
+# eg: "git push -u origin master"
+
+git fetch [<options>] [<repository> [<refspec>…]]
+git fetch [<options>] <group>
+git fetch --multiple [<options>] [<repository> | <group>]…
+git fetch --all [<options>]
+# eg: "git fetch", "git fetch origin"
+
+git rm [-f | --force] [-n] [-r] [--cached] [--ignore-unmatch] [--quiet] [--] <file>…
+# eg: "git rm -r tmp"
+
+git branch [--color[=<when>] | --no-color] [-r | -a]
+        [-v [--abbrev=<length> | --no-abbrev]]
+        [(--merged | --no-merged | --contains) [<commit>]]
+git branch [--set-upstream | --track | --no-track] [-l] [-f] <branchname> [<start-point>]
+git branch (-m | -M) [<oldbranch>] <newbranch>
+git branch (-d | -D) [-r] <branchname>…
+
+git branch -a                查看所有分支。
+git branch new_branch        创建新的分支。
+git branch -d branch_name    删除分支。
+git checkout branch_name     切换当前分支。-f参数可以覆盖未提交内容。
+
+git diff tag                    比较tag和HEAD之间的不同。
+git diff tag file               比较一个文件在两者之间的不同。
+git diff tag1..tag2             比较两个tag之间的不同。
+git diff SHA11..SHA12           比较两个提交之间的不同。
+git diff tag1 tag2 file or
+git diff tag1:file tag2:file    比较一个文件在两个tag之间的不同。
+
+git reset HEAD^ or
+git reset HEAD~1        撤销最后一次提交。
+git reset --hard HEAD^  撤销最后一次提交并清除本地修改。
+git reset SHA1          回到SHA1对应的提交状态。
+
+git ls-files -m         显示修改过的文件。
+git ls-files            显示所有仓库中的文件。
+
+git log file                    查看一个文件的改动。
+git log -p                      查看日志和改动。
+git log tag1..tag2              查看两个tag之间的日志。
+git log -p tag1..tag2 file      查看一个文件在两个tag之间的不同。
+git log tag..                   查看tag和HEAD之间的不同。
+
+git clean -dxf          用于清除未跟踪文件。
+git clean -dnf          可以显示需要删除的文件，但不包括被.gitignore忽略的。
+git reset --hard HEAD   用于清除跟踪文件的修改。
+
+##=============================================================================
+## 常用命令END
+##=============================================================================
