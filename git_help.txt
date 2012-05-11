@@ -57,25 +57,45 @@ $ git remote add origin git@github.com:username/Hello-World.git
 $ git push -u origin master
 
 ##==== Commonly used git commands. ====
+git init [-q | --quiet] [--bare] [--template=<template_directory>] [--shared[=<permissions>]] [directory]
+#= eg: "git init"
+
 git clone [--template=<template_directory>]
           [-l] [-s] [--no-hardlinks] [-q] [-n] [--bare] [--mirror]
           [-o <name>] [-b <name>] [-u <upload-pack>] [--reference <repository>]
           [--depth <depth>] [--recursive] [--] <repository> [<directory>]
-# eg: "git clone git@github.com:mismo/mismo.github.com.git e:\opensrc\zhi\mismo.github.com"
+#= eg: "git clone git@github.com:mismo/mismo.github.com.git e:\opensrc\zhi\mismo.github.com"
 
 git add [-n] [-v] [--force | -f] [--interactive | -i] [--patch | -p]
           [--edit | -e] [--all | [--update | -u]] [--intent-to-add | -N]
           [--refresh] [--ignore-errors] [--ignore-missing] [--]
           [<filepattern>бн]
-# eg: "git add -A", "git add Documentation/\*.txt", "git add git-*.sh"
+#= eg: "git add -A", "git add Documentation/\*.txt", "git add git-*.sh"
+
+git rm [-f | --force] [-n] [-r] [--cached] [--ignore-unmatch] [--quiet] [--] <file>бн
+#= eg: "git rm -r tmp"
 
 git commit [-a | --interactive] [-s] [-v] [-u<mode>] [--amend] [--dry-run]
            [(-c | -C) <commit>] [-F <file> | -m <msg>] [--reset-author]
            [--allow-empty] [--allow-empty-message] [--no-verify] [-e] [--author=<author>]
            [--date=<date>] [--cleanup=<mode>] [--status | --no-status] [--]
            [[-i | -o ]<file>бн]
-# eg: "git commit -m 'commit msg'", "git commit -a"
-# Exit commit message editor: Esc, "Shift + Z", "Shift + Z".
+#= eg: "git commit -m 'commit msg'", "git commit -a"
+# Exit commit message editor(VIM): Esc, :w = save; :wq = save and quit; :x = save and quit; :q = quit,but failed if unsaved :q! = quit.
+
+git push [--all | --mirror | --tags] [-n | --dry-run] [--receive-pack=<git-receive-pack>]
+           [--repo=<repository>] [-f | --force] [-v | --verbose] [-u | --set-upstream]
+           [<repository> [<refspec>бн]]
+#= eg: "git push -u origin master", "git push origin gh-pages"
+
+git pull [options] [<repository> [<refspec>бн]]
+#= eg: "git pull origin"
+
+git checkout [-q] [-f] [-m] [<branch>]
+git checkout [-q] [-f] [-m] [[-b|-B|--orphan] <new_branch>] [<start_point>]
+git checkout [-f|--ours|--theirs|-m|--conflict=<style>] [<tree-ish>] [--] <paths>бн
+git checkout --patch [<tree-ish>] [--] [<paths>бн]
+#= eg: "git checkout master", "git checkout gh-pages"
 
 git remote [-v | --verbose]
 git remote add [-t <branch>] [-m <master>] [-f] [--tags|--no-tags] [--mirror] <name> <url>
@@ -89,21 +109,13 @@ git remote set-url --delete [--push] <name> <url>
 git remote [-v | --verbose] show [-n] <name>
 git remote prune [-n | --dry-run] <name>
 git remote [-v | --verbose] update [-p | --prune] [group | remote]бн
-# eg: "git remote add origin git@github.com:username/Hello-World.git"
-
-git push [--all | --mirror | --tags] [-n | --dry-run] [--receive-pack=<git-receive-pack>]
-           [--repo=<repository>] [-f | --force] [-v | --verbose] [-u | --set-upstream]
-           [<repository> [<refspec>бн]]
-# eg: "git push -u origin master"
+#= eg: "git remote add origin git@github.com:username/Hello-World.git"
 
 git fetch [<options>] [<repository> [<refspec>бн]]
 git fetch [<options>] <group>
 git fetch --multiple [<options>] [<repository> | <group>]бн
 git fetch --all [<options>]
-# eg: "git fetch", "git fetch origin"
-
-git rm [-f | --force] [-n] [-r] [--cached] [--ignore-unmatch] [--quiet] [--] <file>бн
-# eg: "git rm -r tmp"
+#= eg: "git fetch", "git fetch origin"
 
 git branch [--color[=<when>] | --no-color] [-r | -a]
         [-v [--abbrev=<length> | --no-abbrev]]
