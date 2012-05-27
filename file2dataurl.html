@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>File to DataURL</title>
+<style type="text/css">
+#wrapper {
+	margin-bottom: 10px;
+	background-color: lightgray;
+}
+
+#collector {
+	text-align: center;
+	border: 1px dashed gray;
+	background-color: #EFEDE1;
+}
+
+#output {
+	width: 100%;
+	border: 1px solid gray;
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+
+#output th,#output td {
+	border: 1px solid gray;
+}
+
+.dataurl {
+	width: 100%;
+	height: 100%;
+	min-height: 100px;
+}
+</style>
+</head>
+<body onload="startup();">
+	<div id="wrapper">
+		<input id="chooser" type="file" multiple>
+		<div id="collector">
+			<p>or Drag and drop files here!</p>
+		</div>
+	</div>
+	<div>
+		<table id="output">
+			<colgroup>
+				<col width="20%">
+				<col width="20%">
+				<col width="20%">
+				<col width="20%">
+				<col width="20%">
+			</colgroup>
+			<tr>
+				<th>Filename</th>
+				<th>Type</th>
+				<th>Size (bytes)</th>
+				<th>DataURL</th>
+				<th>Preview (image)</th>
+			</tr>
+		</table>
+	</div>
+	<script type="text/javascript">
+		function startup() {
+			if (typeof FileReader === 'undefined') {
+				document.writeln('Your browser doesnot support HTML5 FileReader!');
+				return;
+			}
+			if (document.location.protocol === 'file:') {
+				document.writeln('The page must be running on the server (Such as IIS, Tomcat, etc.)');
+				return;
+			}
+			var getEl = function(id) {
+				return document.getElementById(id);
+			}, log = function(msg, type) {
+				if (typeof console !== 'undefined') {
+					console[type || 'log'](msg);
+				}
+			}, process = function(files) {
+				var i = 0, len = files.length, file;
+				for (; i < len; i++) {
+					file = files[i];
+					fileToDataURL(file, printDataURL);
+				}
+			}, fileToDataURL = function(file, callback, context) {
+				var reader = new FileReader();
+				reader.onload = function(event) {
+					var dataUri = event.target.result;
+					callback && callback.call(context, file, dataUri);
+				};
+				reader.onerror = function(event) {
+					var msg = 'File could not be read! ErrorCode=' + event.target.error.code;
+					log(msg, 'error');
+					callback && callback.call(context, file, msg, true);
+				};
+				reader.readAsDataURL(file);
+			}, printDataURL = function(file, dataUri, isFail) {
+				var tr = tableElem.insertRow(tableElem.rows.length), uriCell, viewCell, img;
+				tr.insertCell(tr.cells.length).appendChild(document.createTextNode(file.name));
+				tr.insertCell(tr.cells.length).appendChild(document.createTextNode(file.type));
+				tr.insertCell(tr.cells.length).appendChild(document.createTextNode(file.size));
+				uriCell = tr.insertCell(tr.cells.length);
+				if (isFail) {
+					uriCell.appendChild(document.createTextNode(dataUri));
+				} else {
+					uriCell.innerHTML = '<textarea class="dataurl"></textarea>';
+					uriCell.getElementsByTagName('textarea')[0].value = dataUri;
+				}
+				viewCell = tr.insertCell(tr.cells.length);
+				if (!isFail) {
+					viewCell.align = 'center';
+					if (/^image\//.test(file.type)) {
+						viewCell.innerHTML = '<img alt="' + file.name + '"/>';
+						img = viewCell.getElementsByTagName('img')[0];
+						img.src = dataUri;
+						img.onload = function() {
+							if (img.width > 200) {
+								img.style.width = '200px';
+							}
+							if (img.height > 200) {
+								img.style.height = '200px';
+							}
+						};
+					} else {
+						viewCell.appendChild(document.createTextNode(file.name
+								+ ' is not an image!'));
+					}
+				}
+			}, tableElem = getEl('output');
+			getEl('chooser').onchange = function(event) {
+				process(event.target.files);
+			};
+			getEl('collector').ondragover = function(event) {
+				event.preventDefault && event.preventDefault();
+			};
+			getEl('collector').ondrop = function(event) {
+				event.preventDefault && event.preventDefault(); // cancel default actions
+				process(event.dataTransfer.files);
+			};
+		}
+	</script>
+</body>
+</html>
