@@ -44,10 +44,10 @@
 	<div>
 		<table id="output">
 			<colgroup>
-				<col width="20%">
-				<col width="20%">
-				<col width="20%">
-				<col width="20%">
+				<col width="10%">
+				<col width="10%">
+				<col width="10%">
+				<col width="50%">
 				<col width="20%">
 			</colgroup>
 			<tr>
@@ -62,19 +62,21 @@
 	<script type="text/javascript">
 		function startup() {
 			if (typeof FileReader === 'undefined') {
-				document.writeln('Your browser doesnot support HTML5 FileReader!');
+				document.write('Your browser doesnot support HTML5 FileReader!');
 				return;
 			}
 			if (document.location.protocol === 'file:') {
-				document.writeln('The page must be running on the server (Such as IIS, Tomcat, etc.)');
+				document.write('The page must be running on the server(Such as IIS, Tomcat, etc.)');
 				return;
 			}
-			var getEl = function(id) {
-				return document.getElementById(id);
-			}, log = function(msg, type) {
+			var log = function(msg, type) {
 				if (typeof console !== 'undefined') {
 					console[type || 'log'](msg);
 				}
+			}, getEl = function(id) {
+				return document.getElementById(id);
+			}, addText = function(text) {
+				return document.createTextNode(text);
 			}, process = function(files) {
 				var i = 0, len = files.length, file;
 				for (; i < len; i++) {
@@ -95,17 +97,20 @@
 				reader.readAsDataURL(file);
 			}, printDataURL = function(file, dataUri, isFail) {
 				var tr = tableElem.insertRow(tableElem.rows.length), uriCell, viewCell, img;
-				tr.insertCell(tr.cells.length).appendChild(document.createTextNode(file.name));
-				tr.insertCell(tr.cells.length).appendChild(document.createTextNode(file.type));
-				tr.insertCell(tr.cells.length).appendChild(document.createTextNode(file.size));
-				uriCell = tr.insertCell(tr.cells.length);
+				var addCell = function() {
+					return tr.insertCell(tr.cells.length);
+				};
+				addCell().appendChild(addText(file.name));
+				addCell().appendChild(addText(file.type));
+				addCell().appendChild(addText(file.size));
+				uriCell = addCell();
 				if (isFail) {
-					uriCell.appendChild(document.createTextNode(dataUri));
+					uriCell.appendChild(addText(dataUri));
 				} else {
 					uriCell.innerHTML = '<textarea class="dataurl"></textarea>';
 					uriCell.getElementsByTagName('textarea')[0].value = dataUri;
 				}
-				viewCell = tr.insertCell(tr.cells.length);
+				viewCell = addCell();
 				if (!isFail) {
 					viewCell.align = 'center';
 					if (/^image\//.test(file.type)) {
@@ -121,19 +126,18 @@
 							}
 						};
 					} else {
-						viewCell.appendChild(document.createTextNode(file.name
-								+ ' is not an image!'));
+						viewCell.appendChild(addText(file.name + ' is not an image!'));
 					}
 				}
-			}, tableElem = getEl('output');
+			}, tableElem = getEl('output'), collectorElem = getEl('collector');
 			getEl('chooser').onchange = function(event) {
 				process(event.target.files);
 			};
-			getEl('collector').ondragover = function(event) {
+			collectorElem.ondragover = function(event) {
 				event.preventDefault && event.preventDefault();
 			};
-			getEl('collector').ondrop = function(event) {
-				event.preventDefault && event.preventDefault(); // cancel default actions
+			collectorElem.ondrop = function(event) {
+				event.preventDefault && event.preventDefault();
 				process(event.dataTransfer.files);
 			};
 		}
