@@ -5,6 +5,16 @@
 <title>test setup google-analytics</title>
 <script type="text/javascript" src="js/ga.js" id="UA-31604259-1"></script>
 </head>
-<body>
+<body onload="showHead();">
+	<h3>The final html code of &lt;head&gt; as follows:</h3>
+	<pre id="code" style="background-color: lightgray; overflow: auto;">
+	</pre>
+	<script type="text/javascript">
+		function showHead() {
+			var head = document.getElementsByTagName('head')[0];
+			var code = document.getElementById('code');
+			code.innerText = head.innerHTML;
+		}
+	</script>
 </body>
 </html>
