@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>JS Class Extend and Event</title>
+<script type="text/javascript">
+	// http://ejohn.org/blog/simple-javascript-inheritance/
+	var Class = (function(UNDEF) {
+		var initializing = false, regex = /xyz/.test(function() {
+			'xyz';
+		}) ? /\b_super\b/ : /.*/, fn = function() {
+		}, isFn = function(fn) {
+			return (typeof fn === 'function');
+		}, removeItem = function(array, item) {
+			for ( var i = 0, l = array.length; i < l; i++) {
+				if (array[i] === item) {
+					array.splice(i, 1);
+					i--;
+				}
+			}
+		}, getListener = function(obj, type, force) {
+			var allListeners = obj.__allListeners || force && (obj.__allListeners = {});
+			type = type.toLowerCase();
+			return allListeners && (allListeners[type] || force && (allListeners[type] = []));
+		}, extend = function(obj) {
+			var _super = this.prototype, proto, name, isOverwriting;
+			initializing = true;
+			proto = new this();
+			initializing = false;
+			for (name in obj) {
+				isOverwriting = isFn(obj[name]) && isFn(_super[name]) && regex.test(obj[name]);
+				proto[name] = isOverwriting ? (function(name, fn) {
+					return function() {
+						var tmp = this._super, ret;
+						this._super = _super[name];
+						ret = isFn(fn) ? fn.apply(this, arguments) : void (0);
+						this._super = tmp;
+						return ret;
+					};
+				})(name, obj[name]) : obj[name];
+			}
+			function Klass() {
+				if (!initializing && isFn(this.init)) {
+					this.init.apply(this, arguments);
+				}
+			}
+			Klass.prototype = proto;
+			Klass.constructor = Klass;
+			Klass.extend = arguments.callee;
+			return Klass;
+		}, Class = extend.call(fn, {
+			on : function(type, listener) {
+				getListener(this, type, true).push(listener);
+			},
+			un : function(type, listener) {
+				var listeners = getListener(this, type);
+				listeners && removeItem(listeners, listener);
+			},
+			fire : function(type) {
+				var listeners = getListener(this, type), r = null, t, k;
+				if (listeners) {
+					k = listeners.length;
+					while (k--) {
+						t = listeners[k].apply(this, arguments);
+						if (t !== UNDEF) {
+							r = t;
+						}
+					}
+				}
+				if (t = this['on' + type.toLowerCase()]) {
+					r = t.apply(this, arguments);
+				}
+				return r;
+			}
+		});
+		return Class;
+	})();
+</script>
+<script type="text/javascript">
+	var failCount = 0;
+
+	function startup() {
+		testExtend();
+		testEvent();
+		if (!failCount) {
+			alert('测试全部通过！');
+		}
+	}
+
+	function assert(desc, test) {
+		if (arguments.length === 1) {
+			test = desc;
+		}
+		if ('function' === typeof test) {
+			test = test() !== false;
+		}
+		if (!test) {
+			++failCount;
+			throw new Error("assertion failed: " + desc);
+		}
+	}
+
+	function testExtend() {
+		var Person = Class.extend({
+			init : function(isDancing) {
+				this.dancing = isDancing;
+			},
+			dance : function() {
+				return this.dancing;
+			}
+		});
+		var Nezha = Person.extend({
+			init : function() {
+				this._super(false);
+			},
+			dance : function() {
+				return this._super();
+			},
+			sing : function() {
+				return true;
+			}
+		});
+
+		var p = new Person(true);
+		assert('p的dancing应该为true', p.dance());
+
+		var n = new Nezha();
+		assert('n的dancing应该为false', !n.dance());
+		assert('n的sing()应该返回true', n.sing())
+
+		assert(p instanceof Person);
+		assert(p instanceof Class);
+		assert(n instanceof Nezha);
+		assert(n instanceof Person);
+		assert(n instanceof Class);
+	}
+
+	function testEvent() {
+		var Control = Class.extend({
+			init : function(container) {
+				this.container = container;
+			},
+			render : function() {
+				this.container.onclick = bind(this._proxyDomEvent, this);
+				this.fire('ready');
+			},
+			_proxyDomEvent : function(evt) {
+				evt = window.event || evt;
+				return this.fire(evt.type.replace(/^on/, ''), evt);
+			}
+		});
+		var elem = document.getElementById('test');
+		var control = new Control(elem);
+		var eventListener = function(type, evt) {
+			assert(type);
+			if (type === 'click') {
+				assert(evt);
+			}
+			alert('[' + type + '] event occurring!');
+		};
+		// 绑定监听
+		control.on('ready', eventListener); // 测试监听自定义事件
+		control.on('click', eventListener); // 测试监听DOM事件
+
+		// 触发事件
+		control.render();
+		invokeClick(elem); // 模拟DOM事件的触发
+	}
+
+	function bind(fn, context) {
+		return function() {
+			return fn.apply(context, arguments);
+		};
+	}
+
+	// 触发元素的点击事件
+	function invokeClick(element) {
+		if (element.click) { // IE 8,FireFox 12,Chrome 19
+			element.click();
+		} else if (element.fireEvent) {
+			element.fireEvent('onclick');
+		} else if (document.createEvent) { // Safari 5.1.2
+			var evt = document.createEvent('MouseEvents');
+			evt.initEvent('click', true, true);
+			element.dispatchEvent(evt);
+		}
+	}
+</script>
+</head>
+<body onload="startup();">
+	<div id="test">Test pass in [IE 8, FireFox 12, Chrome 19, Safari 5].</div>
+</body>
+</html>
