@@ -55,6 +55,15 @@ $ git add README
 $ git commit -m "first commit"
 $ git remote add origin git@github.com:username/Hello-World.git
 $ git push -u origin master
+      
+##Existing Git Repo?
+$ cd existing_git_repo
+$ git remote add origin git@github.com:username/Hello-World.git
+$ git push -u origin master
+
+##Create a branch
+$ git branch gh-pages
+$ git push -u origin gh-pages
 
 ##==== Commonly used git commands. ====
 git init [-q | --quiet] [--bare] [--template=<template_directory>] [--shared[=<permissions>]] [directory]
