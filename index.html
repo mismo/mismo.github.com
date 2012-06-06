@@ -32,9 +32,26 @@ html,body {
 </style>
 <script type="text/javascript" src="js/ga.js" id="UA-31604259-1"></script>
 </head>
-<body>
+<body onload="setup();">
 	<div id="wrap">
 		<div class="content">Thanks github!</div>
 	</div>
+	<script type="text/javascript">
+		function setup() {
+			var year = new Date().getFullYear() + '', len = year.length, pos = 0;
+			document.onkeypress = function(event) {
+				event = event || window.event;
+				if (year.charCodeAt(pos++) === event.keyCode) {
+					if (pos === len) {
+						pos = 0;
+						document.location = 'list.html';
+					}
+				} else {
+					pos = 0;
+				}
+			};
+			document.body.focus();
+		}
+	</script>
 </body>
 </html>
