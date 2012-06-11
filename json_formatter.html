@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>JSON Formatter</title>
+<style type="text/css">
+body {
+	font-size: 14px;
+}
+
+ul {
+	padding: 0px;
+	margin: 0px 0px 0px 26px;
+	list-style-type: none;
+}
+
+li {
+	position: relative;
+}
+
+.hoverable {
+	-webkit-transition: background-color .2s ease-out 0s;
+	display: inline-block;
+}
+
+.hovered {
+	-webkit-transition-delay: .2s;
+}
+
+.collapsed>.collapsible {
+	display: none;
+}
+
+.ellipsis {
+	display: none;
+}
+
+.collapsed>.ellipsis {
+	display: inherit;
+}
+
+.collapser {
+	position: absolute;
+	top: 1px;
+	left: -1.5em;
+	cursor: default;
+	-webkit-user-select: ignore;
+}
+
+.toolbox {
+	opacity: .45;
+	background-color: #FF80FF;
+	position: absolute;
+	right: 0px;
+	top: 0px;
+	border-color: #c2c2c2;
+	border-width: 0 0 1px 1px;
+	border-style: solid;
+	border-bottom-left-radius: 4px;
+	padding-bottom: 3px;
+	padding-left: 2px;
+	-webkit-transition: opacity .4s ease-out;
+	-webkit-user-select: none;
+	cursor: default;
+}
+
+.toolbox:hover {
+	opacity: 1;
+}
+
+.toolbox>* {
+	padding-left: 3px;
+	padding-right: 3px;
+}
+
+.property {
+	font-weight: bold;
+}
+
+.type-null {
+	color: gray;
+}
+
+.type-boolean {
+	color: firebrick;
+}
+
+.type-number {
+	color: blue;
+}
+
+.type-string {
+	color: green;
+}
+
+.collapser:after {
+	content: "-";
+}
+
+.collapsed>.collapser:after {
+	content: "+";
+}
+
+.ellipsis:after {
+	content: " … ";
+}
+
+.collapsible {
+	margin-left: 2em;
+}
+
+.hoverable {
+	padding-top: 1px 2px;
+	border-radius: 2px;
+}
+
+.hovered {
+	background-color: rgba(255, 191, 223, 1);
+}
+
+.collapser {
+	padding-right: 10px;
+	padding-left: 6px;
+}
+
+#wrapper {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+}
+
+#wrapper>table {
+	width: 100%;
+	height: 100%;
+	table-layout: fixed;
+	border: 1px solid gray;
+	background: lightgray;
+}
+
+#wrapper>table td {
+	border: 1px solid gray;
+}
+
+.row1 {
+	height: 30px;
+}
+
+.row2 {
+	height: 20px;
+}
+
+.row3 {
+	height: 100%;
+	vertical-align: top;
+}
+
+#jsonText {
+	width: 99%;
+	height: 100%;
+	overflow: auto;
+}
+
+#jsonHtml {
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+	position: relative;
+	height: 100%;
+	overflow: auto;
+	overflow: auto;
+}
+
+.json-cell {
+	padding: 0px;
+}
+
+.html-cell {
+	background: #fff;
+}
+</style>
+<script type="text/javascript" src="js/ga.js" id="UA-31604259-1"></script>
+</head>
+<body onload="startup();">
+	<div id="wrapper">
+		<table>
+			<col width="50%">
+			<col width="50%">
+			<tr class="row1">
+				<td colspan="2"><input type="button" value="格式化" id="btnFormat"><input
+					type="button" value="清空" id="btnClear"></td>
+			</tr>
+			<tr class="row2">
+				<td>JSON：</td>
+				<td>HTML：</td>
+			</tr>
+			<tr class="row3">
+				<td class="json-cell"><textarea id="jsonText" rows="15"></textarea></td>
+				<td class="html-cell"><div id="jsonHtml"></div></td>
+			</tr>
+		</table>
+	</div>
+	<script type="text/javascript">
+	var formatter = (function() {
+		function htmlEncode(t) {
+			if (t == null) {
+				return '';
+			} else {
+				var o = {
+					'&' : '&amp;',
+					'"' : '&quot;',
+					'<' : '&lt;',
+					'>' : '&gt;'
+				}, s = t.toString(), p;
+				for (p in o) {
+					s = s.replace(new RegExp(p, 'g'), o[p]);
+				}
+				return s;
+			}
+		}
+
+		function decorateWithSpan(value, className) {
+			return '<span class="' + className + '">' + htmlEncode(value) + '</span>';
+		}
+
+		function keysOf(object) {
+			return Object.keys ? Object.keys(object) : (function(o, p, keys){
+				keys = [];
+				for (p in o) {
+					keys.push(p);
+				}
+				return keys;
+			})(object);
+		}
+
+		function valueToHTML(value) {
+			var valueType = typeof value, output = '';
+			if (value == null) {
+				output += decorateWithSpan('null', 'type-null');
+			} else if (value && value.constructor == Array) {
+				output += arrayToHTML(value);
+			} else if (valueType == 'object') {
+				output += objectToHTML(value);
+			} else if (valueType == 'number') {
+				output += decorateWithSpan(value, 'type-number');
+			} else if (valueType == 'string') {
+				if (/^(http|https|ftp|file):\/\/[^\s]+$/.test(value)) {
+					output += decorateWithSpan('"', 'type-string');
+					output += '<a href="' + value + '">' + htmlEncode(value) + '</a>';
+					output += decorateWithSpan('"', 'type-string');
+				} else {
+					output += decorateWithSpan('"' + value + '"', 'type-string');
+				}
+			} else if (valueType == 'boolean') {
+				output += decorateWithSpan(value, 'type-boolean');
+			}
+			return output;
+		}
+
+		function arrayToHTML(json) {
+			var i, length, hasContents = false;
+			var output = '<div class="collapser"></div>[<span class="ellipsis"></span>'
+					+ '<ul class="array collapsible">';
+			for (i = 0, length = json.length; i < length; i++) {
+				hasContents = true;
+				output += '<li><div class="hoverable">';
+				output += valueToHTML(json[i]);
+				if (i < length - 1) {
+					output += ',';
+				}
+				output += '</div></li>';
+			}
+			output += '</ul>]';
+			if (!hasContents) {
+				output = '[ ]';
+			}
+			return output;
+		}
+
+		function objectToHTML(json) {
+			var i, key, length, keys = keysOf(json), hasContents = false;
+			var output = '<div class="collapser"></div>{<span class="ellipsis"></span>'
+					+ '<ul class="obj collapsible">';
+			for (i = 0, length = keys.length; i < length; i++) {
+				key = keys[i];
+				hasContents = true;
+				output += '<li><div class="hoverable">';
+				output += '<span class="property">' + htmlEncode(key) + '</span>: ';
+				output += valueToHTML(json[key]);
+				if (i < length - 1) {
+					output += ',';
+				}
+				output += '</div></li>';
+			}
+			output += '</ul>}';
+			if (!hasContents) {
+				output = '{ }';
+			}
+			return output;
+		}
+
+		var _NEW_LINE = '\n', _PRINT_INDENT = '\t';
+		return {
+			jsonToHTML : function(json) {
+				var output = '<div id="json">';
+				output += valueToHTML(json);
+				output += '</div>';
+				return output;
+			},
+
+			jsonToString : function(json, _level) {
+				var t = typeof (json);
+				if (_level === undefined) {
+					_level = 0;
+				} else {
+					++_level;
+				}
+				if (t == 'object') { // Object|Array|null
+					if (json == null)
+						return 'null';
+					else if (json instanceof Date)
+						return '"' + json.toLocaleString() + '"';
+					var indent = _PRINT_INDENT;
+					var l = _level;
+					while (l--) {
+						indent += _PRINT_INDENT;
+					}
+					var isArray = json instanceof Array;
+					if (isArray) {
+						var s = '[' + _NEW_LINE, len = json.length, i, v;
+						for (i = 0; i < len; i++) {
+							v = this.jsonToString(json[i], _level);
+							s += indent + v + ',' + _NEW_LINE;
+						}
+						if (len > 0) {
+							s = s.substring(0, s.length - (',' + _NEW_LINE).length) + _NEW_LINE;
+						}
+						s += indent.substring(0, (indent.length - _PRINT_INDENT.length)) + ']';
+						return s;
+					} else {
+						var s = '{' + _NEW_LINE, hasProp = false, count = 0, p, pp, v;
+						for (p in json) {
+							pp = /\s+/.test(p) ? ('"' + p + '"') : p;
+							v = this.jsonToString(json[p], _level);
+							s += indent + pp + ': ' + v + ',' + _NEW_LINE;
+							hasProp = true;
+						}
+						if (hasProp) {
+							s = s.substring(0, s.length - (',' + _NEW_LINE).length) + _NEW_LINE;
+						}
+						s += indent.substring(0, (indent.length - _PRINT_INDENT.length)) + '}';
+						return s;
+					}
+				} else if (t == 'function') { // Function
+					var s = json.toString();
+					// return s.replace(/\n|\r/gm, ' ');
+					return 'function() { /*...*/ }';
+				} else if (t == 'undefined') { // Undefined
+					return 'undefined';
+				} else if (t == 'string') { // String
+					var c = /"/.test(json) ? "'" : '"';
+					return c + json + c;
+				} else { // Number|Boolean
+					return '' + json;
+				}
+			}
+		};
+	})(),
+
+	addEventHandler = document.addEventListener ? function(el, type, fn, cap) {
+		if (!el) {
+			return;
+		} else if (el.addEventListener) {
+			el.addEventListener(type, fn, !!cap);
+		} else {
+			el['on' + type] = fn;
+		}
+	} : function(el, type, fn) {
+		if (!el) {
+			return;
+		} else if (el.attachEvent) {
+			el.attachEvent('on' + type, fn);
+		} else {
+			el['on' + type] = fn;
+		}
+	},
+
+	removeEventHandler = document.removeEventListener ? function(el, type, fn, cap) {
+		if (!el) {
+			return;
+		} else if (el.removeEventListener) {
+			el.removeEventListener(type, fn, !!cap);
+		} else {
+			el['on' + type] = null;
+		}
+	} : function(el, type, fn) {
+		if (!el) {
+			return;
+		} else if (el.detachEvent) {
+			el.detachEvent('on' + type, fn);
+		} else {
+			el['on' + type] = null;
+		}
+	},
+
+	getElementsByClassName = document.getElementsByClassName ? function(clzName, rootNode, tag) {
+		var ret = [], nodes = (rootNode || document).getElementsByClassName(clzName), i = 0, node;
+		tag = tag ? tag.toUpperCase() : '*';
+		for (; node = nodes[i++];) {
+			if (tag === '*' || node.tagName === tag) {
+				ret.push(node);
+			}
+		}
+		return ret;
+	} : function(clzName, rootNode, tag) {
+		var ret = [], names = clzName.split(/[ ]+/), len = names.length, i = len;
+		var nodes = (rootNode || document).getElementsByTagName(tag || '*'), j = 0;
+		var patterns = [], node, nodeClz, match, k;
+		while (--i > -1) {
+			patterns.push(new RegExp('(^|\\s)' + names[i] + '(\\s|$)'));
+		}
+		for (; node = nodes[j++];) {
+			match = false;
+			nodeClz = node.className;
+			for (k = 0; k < len; k++) {
+				if (!(match = patterns[k].test(nodeClz))) {
+					break;
+				}
+			}
+			if (match) {
+				ret.push(node);
+			}
+		}
+		return ret;
+	},
+
+	hasClass = function(elem, value) {
+		var elemClass = elem && elem.className;
+		if (elemClass) {
+			var classNames = (value + '').split(/[\.\s]\s*\.?/), cl = classNames.length;
+			var SPACE = ' ', clzName = SPACE + elemClass + SPACE, j = 0, ret = cl && true;
+			for (; j < cl; j++) {
+				if (clzName.indexOf(SPACE + classNames[j] + SPACE) < 0) {
+					ret = false;
+					break;
+				}
+			}
+			if (ret) {
+				return true;
+			}
+		}
+		return false;
+	},
+
+	addClass = function(elem, value) {
+		if (!elem) {
+			return;
+		}
+		var elemClass = elem.className;
+		if (!elemClass) {
+			elem.className = value;
+		} else {
+			var classNames = (value + '').split(/[\.\s]\s*\.?/), cl = classNames.length;
+			var SPACE = ' ', clzName = SPACE + elemClass + SPACE, setClass = elemClass, j = 0;
+			for (; j < cl; j++) {
+				if (clzName.indexOf(SPACE + classNames[j] + SPACE) < 0) {
+					setClass += SPACE + classNames[j];
+				}
+			}
+			elem.className = setClass.replace(/^\s+|\s+$/g, '');
+		}
+	},
+
+	removeClass = function(elem, value) {
+		if (!elem || !elem.className) {
+			return;
+		}
+		var elemClass = elem.className;
+		var classNames = (value + '').split(/[\.\s]\s*\.?/), cl = classNames.length;
+		if (!cl) {
+			elem.className = '';
+		} else {
+			var SPACE = ' ', clzName = (SPACE + elemClass + SPACE).replace(/[\n\t]/g, SPACE), j = 0, needle;
+			for (; j < cl; j++) {
+				needle = SPACE + classNames[j] + SPACE;
+				while (clzName.indexOf(needle) >= 0) {
+					clzName = clzName.replace(needle, SPACE);
+				}
+			}
+			elem.className = clzName.replace(/^\s+|\s+$/g, '');
+		}
+	},
+
+	forEach = function(o, cb, s) {
+		var n, l;
+		if (!o) {
+			return 0;
+		}
+		s = s || o;
+		if (o.length !== undefined) {
+			for (n = 0, l = o.length; n < l; n++) {
+				if (cb.call(s, o[n], n, o) === false)
+					return 0;
+			}
+		} else {
+			for (n in o) {
+				if (o.hasOwnProperty(n)) {
+					if (cb.call(s, o[n], n, o) === false)
+						return 0;
+				}
+			}
+		}
+		return 1;
+	},
+	
+	indexOf = function(item, array, i) {
+		var len;
+		if (array) {
+			if (Array.prototype.indexOf) {
+				return Array.prototype.indexOf.call(array, item, i);
+			}
+			len = array.length;
+			i = i ? i < 0 ? Math.max(0, len + i) : i : 0;
+			for (; i < len; i++) {
+				// Skip accessing in sparse arrays
+				if (i in array && array[i] === item) {
+					return i;
+				}
+			}
+		}
+		return -1;
+	};
+
+	function $(id) {
+		return document.getElementById(id);
+	}
+
+	function startup() {
+		$('btnClear').onclick = function() {
+			$('jsonText').value = '';
+			$('jsonHtml').innerHTML = '';
+		};
+
+		$('btnFormat').onclick = function() {
+			try {
+				var data = $('jsonText').value, json;
+				if (!data) {
+					return;
+				}
+				json = eval('(' + data + ')');
+				$('jsonText').value = formatter.jsonToString(json);
+			} catch (e) {
+				alert('Parse json error: ' + e.message);
+			}
+			var html, parentElement, toolboxElement, expandElement, reduceElement;
+			html = formatter.jsonToHTML(json);
+			parentElement = $('jsonHtml');
+			parentElement.innerHTML = html;
+			//
+			toolboxElement = document.createElement('div');
+			toolboxElement.className = 'toolbox';
+			expandElement = document.createElement('span');
+			expandElement.title = 'expand all';
+			expandElement.innerText = '+';
+			reduceElement = document.createElement('span');
+			reduceElement.title = 'reduce all';
+			reduceElement.innerText = '-';
+			toolboxElement.appendChild(expandElement);
+			toolboxElement.appendChild(reduceElement);
+			parentElement.appendChild(toolboxElement);
+			//
+			addEventHandler(parentElement, 'click', function(event) {
+				var collapsed, ev = event || window.event, target = ev.target || ev.srcElement;
+				if (target.className == 'collapser') {
+					collapsed = getElementsByClassName('collapsible', target.parentNode)[0];
+					if (hasClass(collapsed.parentNode, 'collapsed')) {
+						removeClass(collapsed.parentNode, 'collapsed');
+					} else {
+						addClass(collapsed.parentNode, 'collapsed');
+					}
+				}
+			}, false);
+			//
+			addEventHandler(parentElement, 'mouseover', (function() {
+				var lastLI;
+				function onmouseOut() {
+					if (lastLI) {
+						removeClass(lastLI.firstChild, 'hovered');
+						lastLI = null;
+					}
+				}
+				return function(event) {
+					var ev = event || window.event, target = ev.target || ev.srcElement;
+					var element = target, str = '';
+					if (element.tagName != 'LI') {
+						while (element && element.tagName != 'LI') {
+							element = element.parentNode;
+						}
+						if (element && element.tagName == 'LI') {
+							if (lastLI && element != lastLI) {
+								removeClass(lastLI.firstChild, 'hovered');
+							}
+							addClass(element.firstChild, 'hovered');
+							lastLI = element;
+							do {
+								if (hasClass(element.parentNode, 'array')) {
+									var index = indexOf(element, element.parentNode.children);
+									str = '[' + index + ']' + str;
+								}
+								if (hasClass(element.parentNode, 'obj')) {
+									str = '.' + element.firstChild.firstChild.innerText + str;
+								}
+								element = element.parentNode.parentNode.parentNode;
+							} while (element.tagName == 'LI');
+							if (str.charAt(0) == '.') {
+								str = str.substring(1);
+							}
+							return;
+						}
+					}
+					onmouseOut();
+				};
+			})(), false);
+			//
+			collapsers = document.querySelectorAll('#json .collapsible .collapsible');
+			//
+			addEventHandler(expandElement, 'click', function() {
+				forEach(collapsers, function(collapsed) {
+					if (hasClass(collapsed.parentNode, 'collapsed')) {
+						removeClass(collapsed.parentNode, 'collapsed');
+					}
+				});
+			}, false);
+			//
+			addEventHandler(reduceElement, 'click', function() {
+				forEach(collapsers, function(collapsed) {
+					if (!hasClass(collapsed.parentNode, 'collapsed')) {
+						addClass(collapsed.parentNode, 'collapsed');
+					}
+				});
+			}, false);
+		};
+	}
+	</script>
+</body>
+</html>
