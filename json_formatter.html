@@ -180,7 +180,6 @@ li {
 	background: #fff;
 }
 </style>
-<script type="text/javascript" src="js/ga.js" id="UA-31604259-1"></script>
 </head>
 <body onload="startup();">
 	<div id="wrapper">
@@ -188,8 +187,8 @@ li {
 			<col width="50%">
 			<col width="50%">
 			<tr class="row1">
-				<td colspan="2"><input type="button" value="格式化" id="btnFormat"><input
-					type="button" value="清空" id="btnClear"></td>
+				<td colspan="2"><input type="button" value="格式化(B)" id="btnFormat" accesskey="b"><input
+					type="button" value="清空(C)" id="btnClear" accesskey="c"></td>
 			</tr>
 			<tr class="row2">
 				<td>JSON：</td>
@@ -540,6 +539,7 @@ li {
 		$('btnClear').onclick = function() {
 			$('jsonText').value = '';
 			$('jsonHtml').innerHTML = '';
+			$('jsonText').focus();
 		};
 
 		$('btnFormat').onclick = function() {
@@ -641,6 +641,8 @@ li {
 				});
 			}, false);
 		};
+		
+		$('jsonText').focus();
 	}
 	</script>
 </body>
