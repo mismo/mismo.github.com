@@ -340,7 +340,8 @@ li {
 					} else {
 						var s = '{' + _NEW_LINE, hasProp = false, count = 0, p, pp, v;
 						for (p in json) {
-							pp = /\s+/.test(p) ? ('"' + p + '"') : p;
+							// pp = /\s+/.test(p) ? ('"' + p + '"') : p;
+							pp = '"' + p + '"';
 							v = this.jsonToString(json[p], _level);
 							s += indent + pp + ': ' + v + ',' + _NEW_LINE;
 							hasProp = true;
@@ -529,7 +530,7 @@ li {
 			}
 		}
 		return -1;
-	};
+	}, formatCount = 0;
 
 	function $(id) {
 		return document.getElementById(id);
@@ -552,8 +553,9 @@ li {
 				$('jsonText').value = formatter.jsonToString(json);
 			} catch (e) {
 				alert('Parse json error: ' + e.message);
+				return;
 			}
-			var html, parentElement, toolboxElement, expandElement, reduceElement;
+			var html, parentElement, toolboxElement, expandElement, reduceElement, collapsers;
 			html = formatter.jsonToHTML(json);
 			parentElement = $('jsonHtml');
 			parentElement.innerHTML = html;
@@ -569,62 +571,69 @@ li {
 			toolboxElement.appendChild(expandElement);
 			toolboxElement.appendChild(reduceElement);
 			parentElement.appendChild(toolboxElement);
-			//
-			addEventHandler(parentElement, 'click', function(event) {
-				var collapsed, ev = event || window.event, target = ev.target || ev.srcElement;
-				if (target.className == 'collapser') {
-					collapsed = getElementsByClassName('collapsible', target.parentNode)[0];
-					if (hasClass(collapsed.parentNode, 'collapsed')) {
-						removeClass(collapsed.parentNode, 'collapsed');
-					} else {
-						addClass(collapsed.parentNode, 'collapsed');
-					}
-				}
-			}, false);
-			//
-			addEventHandler(parentElement, 'mouseover', (function() {
-				var lastLI;
-				function onmouseOut() {
-					if (lastLI) {
-						removeClass(lastLI.firstChild, 'hovered');
-						lastLI = null;
-					}
-				}
-				return function(event) {
-					var ev = event || window.event, target = ev.target || ev.srcElement;
-					var element = target, str = '';
-					if (element.tagName != 'LI') {
-						while (element && element.tagName != 'LI') {
-							element = element.parentNode;
-						}
-						if (element && element.tagName == 'LI') {
-							if (lastLI && element != lastLI) {
-								removeClass(lastLI.firstChild, 'hovered');
-							}
-							addClass(element.firstChild, 'hovered');
-							lastLI = element;
-							do {
-								if (hasClass(element.parentNode, 'array')) {
-									var index = indexOf(element, element.parentNode.children);
-									str = '[' + index + ']' + str;
-								}
-								if (hasClass(element.parentNode, 'obj')) {
-									str = '.' + element.firstChild.firstChild.innerText + str;
-								}
-								element = element.parentNode.parentNode.parentNode;
-							} while (element.tagName == 'LI');
-							if (str.charAt(0) == '.') {
-								str = str.substring(1);
-							}
-							return;
+
+			formatCount++;
+			if (formatCount === 1) { // 仅需绑定一次
+				// 内部对象的“折叠/展开”
+				addEventHandler(parentElement, 'click', function(event) {
+					var collapsed, ev = event || window.event, target = ev.target || ev.srcElement;
+					if (target.className == 'collapser') {
+						collapsed = getElementsByClassName('collapsible', target.parentNode)[0];
+						if (hasClass(collapsed.parentNode, 'collapsed')) {
+							removeClass(collapsed.parentNode, 'collapsed');
+						} else {
+							addClass(collapsed.parentNode, 'collapsed');
 						}
 					}
-					onmouseOut();
-				};
-			})(), false);
+				}, false);
+				
+				// 单一key/value区域高亮
+				addEventHandler(parentElement, 'mouseover', (function() {
+					var lastLI;
+					function onmouseOut() {
+						if (lastLI) {
+							removeClass(lastLI.firstChild, 'hovered');
+							lastLI = null;
+						}
+					}
+					return function(event) {
+						var ev = event || window.event, target = ev.target || ev.srcElement;
+						var element = target, str = '';
+						if (element.tagName != 'LI') {
+							while (element && element.tagName != 'LI') {
+								element = element.parentNode;
+							}
+							if (element && element.tagName == 'LI') {
+								if (lastLI && element != lastLI) {
+									removeClass(lastLI.firstChild, 'hovered');
+								}
+								addClass(element.firstChild, 'hovered');
+								lastLI = element;
+								do {
+									if (hasClass(element.parentNode, 'array')) {
+										var index = indexOf(element, element.parentNode.children);
+										str = '[' + index + ']' + str;
+									}
+									if (hasClass(element.parentNode, 'obj')) {
+										str = '.' + element.firstChild.firstChild.innerText + str;
+									}
+									element = element.parentNode.parentNode.parentNode;
+								} while (element.tagName == 'LI');
+								if (str.charAt(0) == '.') {
+									str = str.substring(1);
+								}
+								return;
+							}
+						}
+						onmouseOut();
+					};
+				})(), false);
+			}
+			
 			//
 			collapsers = document.querySelectorAll('#json .collapsible .collapsible');
-			//
+			
+			// 展开所有内部对象
 			addEventHandler(expandElement, 'click', function() {
 				forEach(collapsers, function(collapsed) {
 					if (hasClass(collapsed.parentNode, 'collapsed')) {
@@ -632,7 +641,8 @@ li {
 					}
 				});
 			}, false);
-			//
+			
+			// 折叠所有内部对象
 			addEventHandler(reduceElement, 'click', function() {
 				forEach(collapsers, function(collapsed) {
 					if (!hasClass(collapsed.parentNode, 'collapsed')) {
