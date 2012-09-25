@@ -300,6 +300,15 @@ li {
 		}
 
 		var _NEW_LINE = '\n', _PRINT_INDENT = '\t';
+		var m = {
+			'\b': '\\b',
+			'\t': '\\t',
+			'\n': '\\n',
+			'\f': '\\f',
+			'\r': '\\r',
+			'"' : '\\"',
+			'\\': '\\\\'	
+		};
 		return {
 			jsonToHTML : function(json) {
 				var output = '<div id="json">';
@@ -359,8 +368,17 @@ li {
 				} else if (t == 'undefined') { // Undefined
 					return 'undefined';
 				} else if (t == 'string') { // String
-					var c = /"/.test(json) ? "'" : '"';
-					return c + json + c;
+					if (/["\\\x00-\x1f]/.test(json)) {
+						json = json.replace(/([\x00-\x1f\\"])/g, function(a, b) {
+								var c = m[b];
+								if (c) {
+									return c;
+								}
+								c = b.charCodeAt();
+								return '\\u00' + Math.floor(c / 16).toString(16) + (c % 16).toString(16);
+						});
+					}
+	        		return '"' + json + '"';
 				} else { // Number|Boolean
 					return '' + json;
 				}
