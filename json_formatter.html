@@ -187,15 +187,20 @@ li {
 			<col width="50%">
 			<col width="50%">
 			<tr class="row1">
-				<td colspan="2"><input type="button" value="格式化(B)" id="btnFormat" accesskey="b"><input
-					type="button" value="清空(C)" id="btnClear" accesskey="c"></td>
+				<td>
+					<input type="button" value="格式化(B)" id="btnFormat" accesskey="b">
+					<input type="button" value="清空(C)" id="btnClear" accesskey="c">
+				</td>
+				<td align="right">
+					<label for="cbSort"><input type="checkbox" value="排序" id="cbSort" checked="checked">排序</label>
+				</td>
 			</tr>
 			<tr class="row2">
 				<td>JSON：</td>
 				<td>HTML：</td>
 			</tr>
 			<tr class="row3">
-				<td class="json-cell"><textarea id="jsonText" rows="15"></textarea></td>
+				<td class="json-cell"><textarea id="jsonText" rows="15" wrap="off"></textarea></td>
 				<td class="html-cell"><div id="jsonHtml"></div></td>
 			</tr>
 		</table>
@@ -224,13 +229,17 @@ li {
 		}
 
 		function keysOf(object) {
-			return Object.keys ? Object.keys(object) : (function(o, p, keys){
+			var keys = Object.keys ? Object.keys(object) : (function(o, p, keys){
 				keys = [];
 				for (p in o) {
 					keys.push(p);
 				}
 				return keys;
 			})(object);
+			if ($('cbSort').checked) {
+				keys.sort();
+			}
+			return keys;
 		}
 
 		function valueToHTML(value) {
@@ -347,11 +356,12 @@ li {
 						s += indent.substring(0, (indent.length - _PRINT_INDENT.length)) + ']';
 						return s;
 					} else {
-						var s = '{' + _NEW_LINE, hasProp = false, count = 0, p, pp, v;
-						for (p in json) {
-							// pp = /\s+/.test(p) ? ('"' + p + '"') : p;
-							pp = '"' + p + '"';
-							v = this.jsonToString(json[p], _level);
+						var s = '{' + _NEW_LINE, hasProp = false, count = 0, pp, v;
+						var keys = keysOf(json), key, i, length;
+						for (i = 0, length = keys.length; i < length; i++) {
+							key = keys[i];
+							pp = '"' + key + '"';
+							v = this.jsonToString(json[key], _level);
 							s += indent + pp + ': ' + v + ',' + _NEW_LINE;
 							hasProp = true;
 						}
